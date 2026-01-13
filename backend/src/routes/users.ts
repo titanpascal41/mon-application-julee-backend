@@ -6,7 +6,7 @@ const router = Router();
 
 // GET all
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM users", (err, results) => {
+  db.query("SELECT * FROM Utilisateur", (err, results) => {
     if (err) {
       console.error("Erreur SELECT users:", err);
       return res.status(500).json({ message: "Erreur lors de la récupération", error: err.message });
@@ -19,7 +19,7 @@ router.get("/", (_req, res) => {
 // GET by id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM users WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM Utilisateur WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT user:", err);
       return res.status(500).json({ message: "Erreur lors de la récupération", error: err.message });
@@ -44,14 +44,14 @@ router.post("/", (req, res) => {
 
   if (hasExtendedFields && nom && prenom) {
     db.query(
-      "INSERT INTO users (name, emal, nom, prenom, motDePasse, profilId, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [finalName, email, nom, prenom, motDePasse || null, profilId || null, description || null],
+      "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, profilId, description, actif) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [prenom, nom, email, motDePasse || null, profilId || null, description || null, true],
       (err, result) => {
         if (err) {
           if (err.code === "ER_BAD_FIELD_ERROR") {
             db.query(
-              "INSERT INTO users (name, emal) VALUES (?, ?)",
-              [finalName, email],
+              "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, actif) VALUES (?, ?, ?, ?, ?)",
+              [prenom || 'Utilisateur', nom || finalName, email, motDePasse || null, true],
               (err2, result2) => {
                 if (err2) {
                   console.error("Erreur INSERT user:", err2);
@@ -91,8 +91,8 @@ router.post("/", (req, res) => {
     );
   } else {
     db.query(
-      "INSERT INTO users (name, emal) VALUES (?, ?)",
-      [finalName, email],
+      "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, actif) VALUES (?, ?, ?, ?, ?)",
+      [prenom || 'Utilisateur', nom || finalName, email, motDePasse || null, true],
       (err, result) => {
         if (err) {
           console.error("Erreur INSERT user:", err);
