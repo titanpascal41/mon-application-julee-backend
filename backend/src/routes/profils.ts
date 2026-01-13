@@ -6,7 +6,7 @@ const router = Router();
 
 // GET tous les profils
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM profils ORDER BY id ASC", (err, results) => {
+  db.query("SELECT * FROM Profil ORDER BY id ASC", (err, results) => {
     if (err) {
       console.error("Erreur SELECT profils:", err);
       return res
@@ -21,7 +21,7 @@ router.get("/", (_req, res) => {
 // GET un profil par id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM profils WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM Profil WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT profil:", err);
       return res
@@ -43,7 +43,7 @@ router.post("/", (req, res) => {
     return res.status(400).json({ message: "Le nom du profil est requis" });
   }
 
-  db.query("INSERT INTO profils (nom) VALUES (?)", [nom.trim()], (err, result) => {
+  db.query("INSERT INTO Profil (nom) VALUES (?)", [nom.trim()], (err, result) => {
     if (err) {
       console.error("Erreur INSERT profil:", err);
       return res
@@ -65,7 +65,7 @@ router.put("/:id", (req, res) => {
   }
 
   db.query(
-    "UPDATE profils SET nom = ? WHERE id = ?",
+    "UPDATE Profil SET nom = ? WHERE id = ?",
     [nom.trim(), id],
     (err, result) => {
       if (err) {
@@ -86,7 +86,7 @@ router.put("/:id", (req, res) => {
 // DELETE profil
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM profils WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM Profil WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE profil:", err);
       return res

@@ -6,7 +6,7 @@ const router = Router();
 
 // GET tous les collaborateurs
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM collaborateurs ORDER BY id ASC", (err, results) => {
+  db.query("SELECT * FROM Collaborateur ORDER BY id ASC", (err, results) => {
     if (err) {
       console.error("Erreur SELECT collaborateurs:", err);
       return res
@@ -24,7 +24,7 @@ router.get("/", (_req, res) => {
 // GET un collaborateur par id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM collaborateurs WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM Collaborateur WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT collaborateur:", err);
       return res
@@ -54,7 +54,7 @@ router.post("/", (req, res) => {
   }
 
   db.query(
-    "INSERT INTO collaborateurs (nom, email, poste, telephone, actif) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO Collaborateur (nom, email, poste, telephone, actif) VALUES (?, ?, ?, ?, ?)",
     [nom.trim(), email.trim(), poste || null, telephone || null, actif ?? true],
     (err, result) => {
       if (err) {
@@ -92,7 +92,7 @@ router.put("/:id", (req, res) => {
   }
 
   db.query(
-    "UPDATE collaborateurs SET nom = ?, email = ?, poste = ?, telephone = ?, actif = ? WHERE id = ?",
+    "UPDATE Collaborateur SET nom = ?, email = ?, poste = ?, telephone = ?, actif = ? WHERE id = ?",
     [nom.trim(), email.trim(), poste || null, telephone || null, actif ?? true, id],
     (err, result) => {
       if (err) {
@@ -123,7 +123,7 @@ router.put("/:id", (req, res) => {
 // DELETE collaborateur
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM collaborateurs WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM Collaborateur WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE collaborateur:", err);
       return res

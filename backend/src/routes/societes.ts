@@ -6,7 +6,7 @@ const router = Router();
 
 // GET toutes les sociétés
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM societes ORDER BY id ASC", (err, results) => {
+  db.query("SELECT * FROM Societe ORDER BY id ASC", (err, results) => {
     if (err) {
       console.error("Erreur SELECT societes:", err);
       return res
@@ -21,7 +21,7 @@ router.get("/", (_req, res) => {
 // GET une société par id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM societes WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM Societe WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT societe:", err);
       return res
@@ -45,8 +45,8 @@ router.post("/", (req, res) => {
   }
 
   db.query(
-    "INSERT INTO societes (nom, description, adresse, telephone, email) VALUES (?, ?, ?, ?, ?)",
-    [nom.trim(), description || null, adresse || null, telephone || null, email || null],
+    "INSERT INTO Societe (nom, description, adresse, telephone, email, dateCreation) VALUES (?, ?, ?, ?, ?, ?)",
+    [nom.trim(), description || null, adresse || null, telephone || null, email || null, new Date()],
     (err, result) => {
       if (err) {
         console.error("Erreur INSERT societe:", err);
@@ -77,7 +77,7 @@ router.put("/:id", (req, res) => {
   }
 
   db.query(
-    "UPDATE societes SET nom = ?, description = ?, adresse = ?, telephone = ?, email = ? WHERE id = ?",
+    "UPDATE Societe SET nom = ?, description = ?, adresse = ?, telephone = ?, email = ? WHERE id = ?",
     [nom.trim(), description || null, adresse || null, telephone || null, email || null, id],
     (err, result) => {
       if (err) {
@@ -105,7 +105,7 @@ router.put("/:id", (req, res) => {
 // DELETE société
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM societes WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM Societe WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE societe:", err);
       return res

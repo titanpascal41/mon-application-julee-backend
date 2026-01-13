@@ -6,7 +6,7 @@ const router = Router();
 
 // GET tous les statuts
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM statuts ORDER BY ordre ASC, id ASC", (err, results) => {
+  db.query("SELECT * FROM Statut ORDER BY ordre ASC, id ASC", (err, results) => {
     if (err) {
       console.error("Erreur SELECT statuts:", err);
       return res
@@ -21,7 +21,7 @@ router.get("/", (_req, res) => {
 // GET un statut par id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM statuts WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM Statut WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT statut:", err);
       return res
@@ -53,8 +53,8 @@ router.post("/", (req, res) => {
   }
 
   db.query(
-    "INSERT INTO statuts (nom, categorie, description, quiPeutAppliquer, actif, couleur, ordre) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [nom.trim(), categorie || null, description || null, quiPeutAppliquer || null, actif, couleur, ordre],
+    "INSERT INTO Statut (nom, description, couleur, ordre, actif) VALUES (?, ?, ?, ?, ?)",
+    [nom.trim(), description || null, couleur, ordre, actif],
     (err, result) => {
       if (err) {
         console.error("Erreur INSERT statut:", err);
@@ -88,15 +88,13 @@ router.put("/:id", (req, res) => {
   }
 
   db.query(
-    "UPDATE statuts SET nom = ?, categorie = ?, description = ?, quiPeutAppliquer = ?, actif = ?, couleur = ?, ordre = ? WHERE id = ?",
+    "UPDATE Statut SET nom = ?, description = ?, couleur = ?, ordre = ?, actif = ? WHERE id = ?",
     [
       nom.trim(),
-      categorie || null,
       description || null,
-      quiPeutAppliquer || null,
-      actif ?? true,
       couleur,
       ordre,
+      actif ?? true,
       id,
     ],
     (err, result) => {
@@ -127,7 +125,7 @@ router.put("/:id", (req, res) => {
 // DELETE statut
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM statuts WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM Statut WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE statut:", err);
       return res
