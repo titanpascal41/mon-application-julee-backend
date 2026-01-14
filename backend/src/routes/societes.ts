@@ -62,6 +62,7 @@ router.post("/", (req, res) => {
         adresse,
         telephone,
         email,
+        dateCreation: new Date()
       });
     }
   );

@@ -32,114 +32,94 @@ router.get("/:id", (req, res) => {
 
 // CREATE
 router.post("/", (req, res) => {
-  const { nom, prenom, email, motDePasse, profilId, description, name } = req.body;
+  const { nom, prenom, email, motDePasse, profilId, description, uoId } = req.body;
 
-  // Support ancien format (name) ou nouveau format (nom + prenom)
-  const finalName = name || (prenom && nom ? `${prenom} ${nom}` : nom || prenom || name);
 
   if (!email) return res.status(400).json({ message: "Le champ email est requis" });
-  if (!finalName) return res.status(400).json({ message: "Le nom ou prénom est requis" });
+  if (!nom || !prenom) return res.status(400).json({ message: "Le nom et prénom sont requis" });
+  if (!profilId) return res.status(400).json({ message: "Le profil est requis" });
 
-  const hasExtendedFields = req.body.nom !== undefined || req.body.prenom !== undefined;
-
-  if (hasExtendedFields && nom && prenom) {
-    db.query(
-      "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, profilId, description, actif) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [prenom, nom, email, motDePasse || null, profilId || null, description || null, true],
-      (err, result) => {
-        if (err) {
-          if (err.code === "ER_BAD_FIELD_ERROR") {
-            db.query(
-              "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, actif) VALUES (?, ?, ?, ?, ?)",
-              [prenom || 'Utilisateur', nom || finalName, email, motDePasse || null, true],
-              (err2, result2) => {
-                if (err2) {
-                  console.error("Erreur INSERT user:", err2);
-                  return res
-                    .status(500)
-                    .json({ message: "Erreur lors de la création", error: err2.message });
-                }
-                const info = result2 as ResultSetHeader;
-                return res.status(201).json({
-                  id: info.insertId,
-                  name: finalName,
-                  email,
-                  nom,
-                  prenom,
-                  profilId,
-                  description,
-                });
-              }
-            );
-          } else {
-            console.error("Erreur INSERT user:", err);
-            return res.status(500).json({ message: "Erreur lors de la création", error: err.message });
-          }
-        } else {
-          const info = result as ResultSetHeader;
-          return res.status(201).json({
-            id: info.insertId,
-            name: finalName,
-            email,
-            nom,
-            prenom,
-            profilId,
-            description,
-          });
-        }
-      }
-    );
-  } else {
-    db.query(
-      "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, actif) VALUES (?, ?, ?, ?, ?)",
-      [prenom || 'Utilisateur', nom || finalName, email, motDePasse || null, true],
+  // Création avec tous les champs requis
+  db.query(
+    "INSERT INTO Utilisateur (prenom, nom, email, motDePasse, profilId, description, actif, uoId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [prenom, nom, email, motDePasse || null, profilId, description || null, true, uoId || null],
       (err, result) => {
         if (err) {
           console.error("Erreur INSERT user:", err);
-          return res
-            .status(500)
-            .json({ message: "Erreur lors de la création", error: err.message });
+          return res.status(500).json({ message: "Erreur lors de la création", error: err.message });
         }
         const info = result as ResultSetHeader;
-        return res.status(201).json({ id: info.insertId, name: finalName, email });
+        return res.status(201).json({
+          id: info.insertId,
+          prenom,
+          nom,
+          email,
+          profilId,
+          description,
+          uoId,
+          actif: true
+        });
       }
     );
-  }
-});
+  });
 
 // UPDATE
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { name, email } = req.body;
-  if (!name && !email) return res.status(400).json({ message: "Aucun champ à mettre à jour" });
+  const { nom, prenom, email, motDePasse, profilId, description, uoId, actif } = req.body;
+  if (!nom && !prenom && !email && !motDePasse && !profilId && !description && !uoId && actif === undefined) return res.status(400).json({ message: "Aucun champ à mettre à jour" });
 
   const fields: string[] = [];
   const values: any[] = [];
-  if (name) {
-    fields.push("name = ?");
-    values.push(name);
+  if (nom !== undefined) {
+    fields.push("nom = ?");
+    values.push(nom);
   }
-  if (email) {
-    fields.push("emal = ?");
+  if (prenom !== undefined) {
+    fields.push("prenom = ?");
+    values.push(prenom);
+  }
+  if (email !== undefined) {
+    fields.push("email = ?");
     values.push(email);
+  }
+  if (motDePasse !== undefined) {
+    fields.push("motDePasse = ?");
+    values.push(motDePasse);
+  }
+  if (profilId !== undefined) {
+    fields.push("profilId = ?");
+    values.push(profilId);
+  }
+  if (description !== undefined) {
+    fields.push("description = ?");
+    values.push(description);
+  }
+  if (uoId !== undefined) {
+    fields.push("uoId = ?");
+    values.push(uoId);
+  }
+  if (actif !== undefined) {
+    fields.push("actif = ?");
+    values.push(actif);
   }
   values.push(id);
 
-  db.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, values, (err, result) => {
+  db.query(`UPDATE Utilisateur SET ${fields.join(", ")} WHERE id = ?`, values, (err, result) => {
     if (err) {
       console.error("Erreur UPDATE user:", err);
       return res.status(500).json({ message: "Erreur lors de la mise à jour", error: err.message });
     }
     const info = result as ResultSetHeader;
     if (info.affectedRows === 0) return res.status(404).json({ message: "Utilisateur non trouvé" });
-    return res.json({ id, name, email });
+    return res.json({ id, nom, prenom, email, profilId, description, uoId, actif });
   });
 });
 
 // DELETE
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM users WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM Utilisateur WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE user:", err);
       return res.status(500).json({ message: "Erreur lors de la suppression", error: err.message });
