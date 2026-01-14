@@ -25,15 +25,10 @@ model UniteOrganisationnelle {
   type        String?  // Chef de l'UO
   description String?
   responsable String?
-  parentId    Int?     // uoParenteId dans le frontend
   societeId   Int
-  adresse     String?  // Non affiché mais présent dans les données
-  codePostal  String?  // Non affiché mais présent dans les données
   actif       Boolean  @default(true)
   dateCreation DateTime?
 
-  parent   UniteOrganisationnelle? @relation("UOParent", fields: [parentId], references: [id])
-  enfants  UniteOrganisationnelle[] @relation("UOParent")
   societe  Societe @relation(fields: [societeId], references: [id])
   utilisateurs Utilisateur[]
 }

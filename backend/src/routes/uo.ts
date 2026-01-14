@@ -9,8 +9,6 @@ router.get("/", async (_req, res) => {
   try {
     const uos = await prisma.uniteOrganisationnelle.findMany({
       include: {
-        parent: true,
-        enfants: true,
         societe: true,
         utilisateurs: true,
       },
@@ -29,8 +27,6 @@ router.get("/:id", async (req, res) => {
     const uo = await prisma.uniteOrganisationnelle.findUnique({
       where: { id: parseInt(req.params.id) },
       include: {
-        parent: true,
-        enfants: true,
         societe: true,
         utilisateurs: true,
       },
@@ -48,15 +44,14 @@ router.get("/:id", async (req, res) => {
 // POST créer une UO
 router.post("/", async (req, res) => {
   try {
-    const { nom, description, responsable, parentId, societeId } = req.body;
+    const { nom, description, responsable, societeId } = req.body;
 
     const uo = await prisma.uniteOrganisationnelle.create({
       data: {
         nom,
         description,
         responsable,
-        parentId: parentId ? parseInt(parentId) : null,
-        societeId: societeId ? parseInt(societeId) : null,
+        ...(societeId && { societeId: parseInt(societeId) }),
       },
     });
     res.status(201).json(uo);
@@ -69,7 +64,7 @@ router.post("/", async (req, res) => {
 // PUT mettre à jour une UO
 router.put("/:id", async (req, res) => {
   try {
-    const { nom, description, responsable, parentId, societeId } = req.body;
+    const { nom, description, responsable, societeId } = req.body;
 
     const uo = await prisma.uniteOrganisationnelle.update({
       where: { id: parseInt(req.params.id) },
@@ -77,11 +72,8 @@ router.put("/:id", async (req, res) => {
         ...(nom && { nom }),
         ...(description !== undefined && { description }),
         ...(responsable !== undefined && { responsable }),
-        ...(parentId !== undefined && { 
-          parentId: parentId ? parseInt(parentId) : null 
-        }),
-        ...(societeId !== undefined && { 
-          societeId: societeId ? parseInt(societeId) : null 
+        ...(societeId && {
+          societeId: parseInt(societeId),
         }),
       },
     });
