@@ -14,6 +14,10 @@ import livraisonsRoutes from "./routes/livraisons";
 import uatRoutes from "./routes/uat";
 import roadmapRoutes from "./routes/roadmap";
 import cadreTemporelRoutes from "./routes/cadreTemporel";
+import sprintsRoutes from "./routes/sprints";
+import ressourcesRoutes from "./routes/ressources";
+import delaisRoutes from "./routes/delais";
+import coutsRoutes from "./routes/couts";
 
 config();
 
@@ -40,6 +44,10 @@ app.use("/livraisons", livraisonsRoutes);
 app.use("/uat", uatRoutes);
 app.use("/roadmap", roadmapRoutes);
 app.use("/cadre-temporel", cadreTemporelRoutes);
+app.use("/sprints", sprintsRoutes);
+app.use("/ressources", ressourcesRoutes);
+app.use("/delais", delaisRoutes);
+app.use("/couts", coutsRoutes);
 
 app.listen(PORT, () => {
   console.log(`[server]: Serveur démarré sur http://localhost:${PORT}`);

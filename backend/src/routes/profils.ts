@@ -1,104 +1,89 @@
 import { Router } from "express";
-import { db } from "../db";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { prisma } from "../db";
 
 const router = Router();
 
 // GET tous les profils
-router.get("/", (_req, res) => {
-  db.query("SELECT * FROM Profil ORDER BY id ASC", (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT profils:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération des profils", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    return res.json(rows);
-  });
+router.get("/", async (_req, res) => {
+  try {
+    const profils = await prisma.profil.findMany({
+      orderBy: { id: 'asc' }
+    });
+    return res.json(profils);
+  } catch (error) {
+    console.error("Erreur SELECT profils:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération des profils", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // GET un profil par id
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("SELECT * FROM Profil WHERE id = ?", [id], (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT profil:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération du profil", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    if (rows.length === 0) {
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const profil = await prisma.profil.findUnique({
+      where: { id: parseInt(id) }
+    });
+    if (!profil) {
       return res.status(404).json({ message: "Profil non trouvé" });
     }
-    return res.json(rows[0]);
-  });
+    return res.json(profil);
+  } catch (error) {
+    console.error("Erreur SELECT profil:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération du profil", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // CREATE profil
-router.post("/", (req, res) => {
-  const { nom } = req.body;
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du profil est requis" });
-  }
-
-  db.query("INSERT INTO Profil (nom) VALUES (?)", [nom.trim()], (err, result) => {
-    if (err) {
-      console.error("Erreur INSERT profil:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la création du profil", error: err.message });
+router.post("/", async (req, res) => {
+  try {
+    const { nom } = req.body;
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du profil est requis" });
     }
-    const info = result as ResultSetHeader;
-    return res.status(201).json({ id: info.insertId, nom: nom.trim() });
-  });
+
+    const profil = await prisma.profil.create({
+      data: { nom: nom.trim() }
+    });
+    return res.status(201).json(profil);
+  } catch (error) {
+    console.error("Erreur INSERT profil:", error);
+    return res.status(500).json({ message: "Erreur lors de la création du profil", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // UPDATE profil
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const { nom } = req.body;
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom } = req.body;
 
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du profil est requis" });
-  }
-
-  db.query(
-    "UPDATE Profil SET nom = ? WHERE id = ?",
-    [nom.trim(), id],
-    (err, result) => {
-      if (err) {
-        console.error("Erreur UPDATE profil:", err);
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la mise à jour du profil", error: err.message });
-      }
-      const info = result as ResultSetHeader;
-      if (info.affectedRows === 0) {
-        return res.status(404).json({ message: "Profil non trouvé" });
-      }
-      return res.json({ id, nom: nom.trim() });
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du profil est requis" });
     }
-  );
+
+    const profil = await prisma.profil.update({
+      where: { id: parseInt(id) },
+      data: { nom: nom.trim() }
+    });
+    return res.json(profil);
+  } catch (error) {
+    console.error("Erreur UPDATE profil:", error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour du profil", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // DELETE profil
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("DELETE FROM Profil WHERE id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("Erreur DELETE profil:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la suppression du profil", error: err.message });
-    }
-    const info = result as ResultSetHeader;
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ message: "Profil non trouvé" });
-    }
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.profil.delete({
+      where: { id: parseInt(id) }
+    });
     return res.json({ message: "Profil supprimé" });
-  });
+  } catch (error) {
+    console.error("Erreur DELETE profil:", error);
+    return res.status(500).json({ message: "Erreur lors de la suppression du profil", error: error instanceof Error ? error.message : error });
+  }
 });
 
 export default router;
