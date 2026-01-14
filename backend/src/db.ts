@@ -1,32 +1,34 @@
-import { PrismaClient } from '@prisma/client';
+import mysql from "mysql2";
 import { config } from "dotenv";
 import { Request, Response, NextFunction } from "express";
 
 config();
 
-export const prisma = new PrismaClient();
+export const db = mysql.createConnection({
+  host: process.env.MYSQL_HOST as string,
+  user: process.env.MYSQL_USER as string,
+  password: process.env.MYSQL_PASSWORD as string,
+  database: process.env.MYSQL_DATABASE as string,
+  port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306,
+});
 
 export let dbReady = false;
 
-export const connectDB = async () => {
-  try {
-    await prisma.$connect();
-    dbReady = true;
-    console.log("Connecté à la base de données avec Prisma!");
-  } catch (error) {
-    console.error("Connexion Prisma échouée :", error);
+db.connect((err) => {
+  if (err) {
+    console.error("Connexion MySQL échouée :", err.message);
     dbReady = false;
+    return;
   }
-};
-
-// Connexion automatique
-connectDB();
+  dbReady = true;
+  console.log("Connecté à la base de données MySQL!");
+});
 
 export const requireDbReady = (_req: Request, res: Response, next: NextFunction) => {
   if (!dbReady) {
     return res
       .status(503)
-      .json({ message: "Base de données non connectée. Vérifiez la configuration." });
+      .json({ message: "Base MySQL non connectée. Vérifiez l'instance ou la configuration." });
   }
   next();
 };

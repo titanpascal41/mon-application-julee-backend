@@ -6,12 +6,10 @@ const router = Router();
 
 // GET toutes les sociétés
 router.get("/", (_req, res) => {
-  db.query("SELECT * FROM Societe ORDER BY id ASC", (err, results) => {
+  db.query("SELECT * FROM societes ORDER BY id ASC", (err, results) => {
     if (err) {
       console.error("Erreur SELECT societes:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération des sociétés", error: err.message });
+      return res.status(500).json({ message: "Erreur lors de la récupération des sociétés", error: err.message });
     }
     const rows = results as RowDataPacket[];
     return res.json(rows);
@@ -21,12 +19,10 @@ router.get("/", (_req, res) => {
 // GET une société par id
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM Societe WHERE id = ?", [id], (err, results) => {
+  db.query("SELECT * FROM societes WHERE id = ?", [id], (err, results) => {
     if (err) {
       console.error("Erreur SELECT societe:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération de la société", error: err.message });
+      return res.status(500).json({ message: "Erreur lors de la récupération de la société", error: err.message });
     }
     const rows = results as RowDataPacket[];
     if (rows.length === 0) {
@@ -38,31 +34,28 @@ router.get("/:id", (req, res) => {
 
 // CREATE société
 router.post("/", (req, res) => {
-  const { nom, description, adresse, telephone, email } = req.body;
+  const { nom, adresse, email, telephone, responsable } = req.body;
 
   if (!nom || !nom.trim()) {
     return res.status(400).json({ message: "Le nom de la société est requis" });
   }
 
   db.query(
-    "INSERT INTO Societe (nom, description, adresse, telephone, email, dateCreation) VALUES (?, ?, ?, ?, ?, ?)",
-    [nom.trim(), description || null, adresse || null, telephone || null, email || null, new Date()],
+    "INSERT INTO societes (nom, adresse, email, telephone, responsable) VALUES (?, ?, ?, ?, ?)",
+    [nom.trim(), adresse || null, email || null, telephone || null, responsable || null],
     (err, result) => {
       if (err) {
         console.error("Erreur INSERT societe:", err);
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la création de la société", error: err.message });
+        return res.status(500).json({ message: "Erreur lors de la création de la société", error: err.message });
       }
       const info = result as ResultSetHeader;
       return res.status(201).json({
         id: info.insertId,
         nom: nom.trim(),
-        description,
         adresse,
-        telephone,
         email,
-        dateCreation: new Date()
+        telephone,
+        responsable
       });
     }
   );
@@ -71,21 +64,19 @@ router.post("/", (req, res) => {
 // UPDATE société
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { nom, description, adresse, telephone, email } = req.body;
+  const { nom, adresse, email, telephone, responsable } = req.body;
 
   if (!nom || !nom.trim()) {
     return res.status(400).json({ message: "Le nom de la société est requis" });
   }
 
   db.query(
-    "UPDATE Societe SET nom = ?, description = ?, adresse = ?, telephone = ?, email = ? WHERE id = ?",
-    [nom.trim(), description || null, adresse || null, telephone || null, email || null, id],
+    "UPDATE societes SET nom = ?, adresse = ?, email = ?, telephone = ?, responsable = ? WHERE id = ?",
+    [nom.trim(), adresse || null, email || null, telephone || null, responsable || null, id],
     (err, result) => {
       if (err) {
         console.error("Erreur UPDATE societe:", err);
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la mise à jour de la société", error: err.message });
+        return res.status(500).json({ message: "Erreur lors de la mise à jour de la société", error: err.message });
       }
       const info = result as ResultSetHeader;
       if (info.affectedRows === 0) {
@@ -94,10 +85,10 @@ router.put("/:id", (req, res) => {
       return res.json({
         id,
         nom: nom.trim(),
-        description,
         adresse,
-        telephone,
         email,
+        telephone,
+        responsable
       });
     }
   );
@@ -106,12 +97,10 @@ router.put("/:id", (req, res) => {
 // DELETE société
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM Societe WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM societes WHERE id = ?", [id], (err, result) => {
     if (err) {
       console.error("Erreur DELETE societe:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la suppression de la société", error: err.message });
+      return res.status(500).json({ message: "Erreur lors de la suppression de la société", error: err.message });
     }
     const info = result as ResultSetHeader;
     if (info.affectedRows === 0) {
