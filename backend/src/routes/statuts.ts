@@ -1,143 +1,98 @@
 import { Router } from "express";
-import { db } from "../db";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { prisma } from "../db";
 
 const router = Router();
 
 // GET tous les statuts
-router.get("/", (_req, res) => {
-  db.query("SELECT * FROM Statut ORDER BY ordre ASC, id ASC", (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT statuts:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération des statuts", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    return res.json(rows);
-  });
+router.get("/", async (_req, res) => {
+  try {
+    const statuts = await prisma.statut.findMany({
+      orderBy: { id: 'asc' }
+    });
+    return res.json(statuts);
+  } catch (error) {
+    console.error("Erreur SELECT statuts:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération des statuts", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // GET un statut par id
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("SELECT * FROM Statut WHERE id = ?", [id], (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT statut:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération du statut", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    if (rows.length === 0) {
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const statut = await prisma.statut.findUnique({
+      where: { id: parseInt(id) }
+    });
+    if (!statut) {
       return res.status(404).json({ message: "Statut non trouvé" });
     }
-    return res.json(rows[0]);
-  });
+    return res.json(statut);
+  } catch (error) {
+    console.error("Erreur SELECT statut:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération du statut", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // CREATE statut
-router.post("/", (req, res) => {
-  const {
-    nom,
-    categorie,
-    description,
-    quiPeutAppliquer,
-    actif = true,
-    couleur = null,
-    ordre = null,
-  } = req.body;
+router.post("/", async (req, res) => {
+  try {
+    const { nom, description, actif } = req.body;
 
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du statut est requis" });
-  }
-
-  db.query(
-    "INSERT INTO Statut (nom, description, couleur, ordre, actif) VALUES (?, ?, ?, ?, ?)",
-    [nom.trim(), description || null, couleur, ordre, actif],
-    (err, result) => {
-      if (err) {
-        console.error("Erreur INSERT statut:", err);
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la création du statut", error: err.message });
-      }
-      const info = result as ResultSetHeader;
-      return res.status(201).json({
-        id: info.insertId,
-        nom: nom.trim(),
-        categorie,
-        description,
-        quiPeutAppliquer,
-        actif,
-        couleur,
-        ordre,
-      });
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du statut est requis" });
     }
-  );
+
+    const statut = await prisma.statut.create({
+      data: {
+        nom: nom.trim(),
+        description,
+        actif: actif ?? true
+      }
+    });
+    return res.status(201).json(statut);
+  } catch (error) {
+    console.error("Erreur INSERT statut:", error);
+    return res.status(500).json({ message: "Erreur lors de la création du statut", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // UPDATE statut
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const { nom, categorie, description, quiPeutAppliquer, actif, couleur = null, ordre = null } =
-    req.body;
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, description, actif } = req.body;
 
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du statut est requis" });
-  }
-
-  db.query(
-    "UPDATE Statut SET nom = ?, description = ?, couleur = ?, ordre = ?, actif = ? WHERE id = ?",
-    [
-      nom.trim(),
-      description || null,
-      couleur,
-      ordre,
-      actif ?? true,
-      id,
-    ],
-    (err, result) => {
-      if (err) {
-        console.error("Erreur UPDATE statut:", err);
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la mise à jour du statut", error: err.message });
-      }
-      const info = result as ResultSetHeader;
-      if (info.affectedRows === 0) {
-        return res.status(404).json({ message: "Statut non trouvé" });
-      }
-      return res.json({
-        id,
-        nom: nom.trim(),
-        categorie,
-        description,
-        quiPeutAppliquer,
-        actif: actif ?? true,
-        couleur,
-        ordre,
-      });
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du statut est requis" });
     }
-  );
+
+    const statut = await prisma.statut.update({
+      where: { id: parseInt(id) },
+      data: {
+        nom: nom.trim(),
+        description,
+        actif: actif ?? true
+      }
+    });
+    return res.json(statut);
+  } catch (error) {
+    console.error("Erreur UPDATE statut:", error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour du statut", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // DELETE statut
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("DELETE FROM Statut WHERE id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("Erreur DELETE statut:", err);
-      return res
-        .status(500)
-        .json({ message: "Erreur lors de la suppression du statut", error: err.message });
-    }
-    const info = result as ResultSetHeader;
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ message: "Statut non trouvé" });
-    }
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.statut.delete({
+      where: { id: parseInt(id) }
+    });
     return res.json({ message: "Statut supprimé" });
-  });
+  } catch (error) {
+    console.error("Erreur DELETE statut:", error);
+    return res.status(500).json({ message: "Erreur lors de la suppression du statut", error: error instanceof Error ? error.message : error });
+  }
 });
 
 export default router;
