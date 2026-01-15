@@ -1,8 +1,7 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET tous les UAT
 router.get("/", async (_req, res) => {
@@ -37,26 +36,26 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const {
-      nom,
-      description,
-      dateDebut,
-      dateFin,
-      statut,
-      resultat,
-      testeur,
-      version,
+      dateDebutUAT,
+      dateFinUAT,
+      statutUAT,
+      nombreRetoursUAT,
+      reservesMetier,
+      commentaireUAT,
+      signatureValidationClient,
+      planAction,
     } = req.body;
 
     const uat = await prisma.uAT.create({
       data: {
-        nom,
-        description,
-        dateDebut: dateDebut ? new Date(dateDebut) : null,
-        dateFin: dateFin ? new Date(dateFin) : null,
-        statut,
-        resultat,
-        testeur,
-        version,
+        dateDebutUAT: new Date(dateDebutUAT),
+        dateFinUAT: dateFinUAT ? new Date(dateFinUAT) : null,
+        statutUAT,
+        nombreRetoursUAT: nombreRetoursUAT || 0,
+        reservesMetier,
+        commentaireUAT,
+        signatureValidationClient,
+        planAction,
       },
     });
     res.status(201).json(uat);
@@ -70,31 +69,31 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const {
-      nom,
-      description,
-      dateDebut,
-      dateFin,
-      statut,
-      resultat,
-      testeur,
-      version,
+      dateDebutUAT,
+      dateFinUAT,
+      statutUAT,
+      nombreRetoursUAT,
+      reservesMetier,
+      commentaireUAT,
+      signatureValidationClient,
+      planAction,
     } = req.body;
 
     const uat = await prisma.uAT.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(nom && { nom }),
-        ...(description !== undefined && { description }),
-        ...(dateDebut !== undefined && { 
-          dateDebut: dateDebut ? new Date(dateDebut) : null 
+        ...(dateDebutUAT !== undefined && { 
+          dateDebutUAT: new Date(dateDebutUAT)
         }),
-        ...(dateFin !== undefined && { 
-          dateFin: dateFin ? new Date(dateFin) : null 
+        ...(dateFinUAT !== undefined && { 
+          dateFinUAT: dateFinUAT ? new Date(dateFinUAT) : null 
         }),
-        ...(statut !== undefined && { statut }),
-        ...(resultat !== undefined && { resultat }),
-        ...(testeur !== undefined && { testeur }),
-        ...(version !== undefined && { version }),
+        ...(statutUAT !== undefined && { statutUAT }),
+        ...(nombreRetoursUAT !== undefined && { nombreRetoursUAT }),
+        ...(reservesMetier !== undefined && { reservesMetier }),
+        ...(commentaireUAT !== undefined && { commentaireUAT }),
+        ...(signatureValidationClient !== undefined && { signatureValidationClient }),
+        ...(planAction !== undefined && { planAction }),
         dateModification: new Date(),
       },
     });

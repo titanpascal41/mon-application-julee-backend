@@ -1,14 +1,12 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET toutes les livraisons
 router.get("/", async (_req, res) => {
   try {
     const livraisons = await prisma.livraison.findMany({
-      include: { recette: true },
       orderBy: { dateCreation: "desc" },
     });
     res.json(livraisons);
@@ -23,7 +21,6 @@ router.get("/:id", async (req, res) => {
   try {
     const livraison = await prisma.livraison.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: { recette: true },
     });
     if (!livraison) {
       return res.status(404).json({ error: "Livraison introuvable" });
@@ -40,21 +37,29 @@ router.post("/", async (req, res) => {
   try {
     const {
       numeroVersion,
-      dateLivraison,
-      statut,
-      environnement,
-      commentaires,
-      recetteId,
+      releaseNotes,
+      dateLivraisonPrevue,
+      dateLivraisonEffective,
+      dateDeploiement,
+      responsableDevOps,
+      statutLivraison,
+      commentairesGP,
+      validationGONOGO,
+      rollbackAutomatique,
     } = req.body;
 
     const livraison = await prisma.livraison.create({
       data: {
         numeroVersion,
-        dateLivraison: dateLivraison ? new Date(dateLivraison) : null,
-        statut,
-        environnement,
-        commentaires,
-        recetteId: recetteId ? parseInt(recetteId) : null,
+        releaseNotes,
+        dateLivraisonPrevue: new Date(dateLivraisonPrevue),
+        dateLivraisonEffective: dateLivraisonEffective ? new Date(dateLivraisonEffective) : null,
+        dateDeploiement: dateDeploiement ? new Date(dateDeploiement) : null,
+        responsableDevOps,
+        statutLivraison,
+        commentairesGP,
+        validationGONOGO,
+        rollbackAutomatique: rollbackAutomatique ?? false,
       },
     });
     res.status(201).json(livraison);
@@ -69,26 +74,36 @@ router.put("/:id", async (req, res) => {
   try {
     const {
       numeroVersion,
-      dateLivraison,
-      statut,
-      environnement,
-      commentaires,
-      recetteId,
+      releaseNotes,
+      dateLivraisonPrevue,
+      dateLivraisonEffective,
+      dateDeploiement,
+      responsableDevOps,
+      statutLivraison,
+      commentairesGP,
+      validationGONOGO,
+      rollbackAutomatique,
     } = req.body;
 
     const livraison = await prisma.livraison.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(numeroVersion && { numeroVersion }),
-        ...(dateLivraison !== undefined && { 
-          dateLivraison: dateLivraison ? new Date(dateLivraison) : null 
+        ...(numeroVersion !== undefined && { numeroVersion }),
+        ...(releaseNotes !== undefined && { releaseNotes }),
+        ...(dateLivraisonPrevue !== undefined && { 
+          dateLivraisonPrevue: new Date(dateLivraisonPrevue)
         }),
-        ...(statut !== undefined && { statut }),
-        ...(environnement !== undefined && { environnement }),
-        ...(commentaires !== undefined && { commentaires }),
-        ...(recetteId !== undefined && { 
-          recetteId: recetteId ? parseInt(recetteId) : null 
+        ...(dateLivraisonEffective !== undefined && { 
+          dateLivraisonEffective: dateLivraisonEffective ? new Date(dateLivraisonEffective) : null 
         }),
+        ...(dateDeploiement !== undefined && { 
+          dateDeploiement: dateDeploiement ? new Date(dateDeploiement) : null 
+        }),
+        ...(responsableDevOps !== undefined && { responsableDevOps }),
+        ...(statutLivraison !== undefined && { statutLivraison }),
+        ...(commentairesGP !== undefined && { commentairesGP }),
+        ...(validationGONOGO !== undefined && { validationGONOGO }),
+        ...(rollbackAutomatique !== undefined && { rollbackAutomatique }),
         dateModification: new Date(),
       },
     });

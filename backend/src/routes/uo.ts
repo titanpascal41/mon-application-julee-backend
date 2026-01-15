@@ -1,17 +1,12 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET toutes les UO
 router.get("/", async (_req, res) => {
   try {
     const uos = await prisma.uniteOrganisationnelle.findMany({
-      include: {
-        societe: true,
-        utilisateurs: true,
-      },
       orderBy: { nom: "asc" },
     });
     res.json(uos);
@@ -26,10 +21,6 @@ router.get("/:id", async (req, res) => {
   try {
     const uo = await prisma.uniteOrganisationnelle.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: {
-        societe: true,
-        utilisateurs: true,
-      },
     });
     if (!uo) {
       return res.status(404).json({ error: "UO introuvable" });
@@ -44,15 +35,22 @@ router.get("/:id", async (req, res) => {
 // POST créer une UO
 router.post("/", async (req, res) => {
   try {
-    const { nom, description, responsable, societeId } = req.body;
+    const { nom, type, actif, societeId, adresse, codePostal, uoParenteId } = req.body;
+
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom de l'UO est requis" });
+    }
 
     const uo = await prisma.uniteOrganisationnelle.create({
       data: {
-        nom,
-        description,
-        responsable,
+        nom: nom.trim(),
+        type: type || null,
+        actif: actif ?? true,
+        adresse: adresse || null,
+        codePostal: codePostal || null,
         ...(societeId && { societeId: parseInt(societeId) }),
-      },
+        ...(uoParenteId && { uoParenteId: parseInt(uoParenteId) })
+      }
     });
     res.status(201).json(uo);
   } catch (error) {
@@ -64,16 +62,25 @@ router.post("/", async (req, res) => {
 // PUT mettre à jour une UO
 router.put("/:id", async (req, res) => {
   try {
-    const { nom, description, responsable, societeId } = req.body;
+    const { nom, type, actif, societeId, adresse, codePostal, uoParenteId } = req.body;
+
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom de l'UO est requis" });
+    }
 
     const uo = await prisma.uniteOrganisationnelle.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(nom && { nom }),
-        ...(description !== undefined && { description }),
-        ...(responsable !== undefined && { responsable }),
+        ...(nom && { nom: nom.trim() }),
+        ...(type !== undefined && { type }),
+        ...(actif !== undefined && { actif }),
+        ...(adresse !== undefined && { adresse }),
+        ...(codePostal !== undefined && { codePostal }),
         ...(societeId && {
           societeId: parseInt(societeId),
+        }),
+        ...(uoParenteId && {
+          uoParenteId: parseInt(uoParenteId),
         }),
       },
     });

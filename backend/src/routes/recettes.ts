@@ -1,14 +1,12 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET toutes les recettes
 router.get("/", async (_req, res) => {
   try {
     const recettes = await prisma.recette.findMany({
-      include: { livraisons: true },
       orderBy: { dateCreation: "desc" },
     });
     res.json(recettes);
@@ -23,7 +21,6 @@ router.get("/:id", async (req, res) => {
   try {
     const recette = await prisma.recette.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: { livraisons: true },
     });
     if (!recette) {
       return res.status(404).json({ error: "Recette introuvable" });
@@ -44,21 +41,19 @@ router.post("/", async (req, res) => {
       anomaliesBloquantes,
       anomaliesMajeures,
       anomaliesMineures,
-      statut,
-      commentaires,
-      gp,
+      statutGlobal,
+      commentairesGP,
     } = req.body;
 
     const recette = await prisma.recette.create({
       data: {
-        dateDebut: dateDebut ? new Date(dateDebut) : null,
+        dateDebut: new Date(dateDebut),
         dateFin: dateFin ? new Date(dateFin) : null,
         anomaliesBloquantes: anomaliesBloquantes || 0,
         anomaliesMajeures: anomaliesMajeures || 0,
         anomaliesMineures: anomaliesMineures || 0,
-        statut,
-        commentaires,
-        gp,
+        statutGlobal,
+        commentairesGP,
       },
     });
     res.status(201).json(recette);
@@ -77,16 +72,15 @@ router.put("/:id", async (req, res) => {
       anomaliesBloquantes,
       anomaliesMajeures,
       anomaliesMineures,
-      statut,
-      commentaires,
-      gp,
+      statutGlobal,
+      commentairesGP,
     } = req.body;
 
     const recette = await prisma.recette.update({
       where: { id: parseInt(req.params.id) },
       data: {
         ...(dateDebut !== undefined && { 
-          dateDebut: dateDebut ? new Date(dateDebut) : null 
+          dateDebut: new Date(dateDebut)
         }),
         ...(dateFin !== undefined && { 
           dateFin: dateFin ? new Date(dateFin) : null 
@@ -94,9 +88,8 @@ router.put("/:id", async (req, res) => {
         ...(anomaliesBloquantes !== undefined && { anomaliesBloquantes }),
         ...(anomaliesMajeures !== undefined && { anomaliesMajeures }),
         ...(anomaliesMineures !== undefined && { anomaliesMineures }),
-        ...(statut !== undefined && { statut }),
-        ...(commentaires !== undefined && { commentaires }),
-        ...(gp !== undefined && { gp }),
+        ...(statutGlobal !== undefined && { statutGlobal }),
+        ...(commentairesGP !== undefined && { commentairesGP }),
         dateModification: new Date(),
       },
     });

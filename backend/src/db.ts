@@ -1,7 +1,9 @@
 import mysql from "mysql2";
 import { config } from "dotenv";
+import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from "express";
 
+export const prisma = new PrismaClient();
 config();
 
 export const db = mysql.createConnection({

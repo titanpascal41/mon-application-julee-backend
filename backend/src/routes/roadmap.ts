@@ -1,14 +1,13 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../db";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET toutes les phases roadmap
 router.get("/", async (_req, res) => {
   try {
-    const phases = await prisma.roadmapPhase.findMany({
-      orderBy: { dateDebut: "asc" },
+    const phases = await prisma.cadreTemporel.findMany({
+      orderBy: { dateDebutProjet: "asc" },
     });
     res.json(phases);
   } catch (error) {
@@ -20,7 +19,7 @@ router.get("/", async (_req, res) => {
 // GET une phase par ID
 router.get("/:id", async (req, res) => {
   try {
-    const phase = await prisma.roadmapPhase.findUnique({
+    const phase = await prisma.cadreTemporel.findUnique({
       where: { id: parseInt(req.params.id) },
     });
     if (!phase) {
@@ -36,16 +35,14 @@ router.get("/:id", async (req, res) => {
 // POST créer une phase
 router.post("/", async (req, res) => {
   try {
-    const { nom, description, dateDebut, dateFin, statut, objectifs } = req.body;
+    const { dateDebut, dateFin, statut, dateCommunicationPlanningClient } = req.body;
 
-    const phase = await prisma.roadmapPhase.create({
+    const phase = await prisma.cadreTemporel.create({
       data: {
-        nom,
-        description,
-        dateDebut: dateDebut ? new Date(dateDebut) : null,
-        dateFin: dateFin ? new Date(dateFin) : null,
-        statut,
-        objectifs: objectifs || [],
+        dateDebutProjet: new Date(dateDebut),
+        dateFinPrevisionnelle: new Date(dateFin),
+        statutValidationDate: statut,
+        dateCommunicationPlanningClient: new Date(dateCommunicationPlanningClient),
       },
     });
     res.status(201).json(phase);
@@ -58,21 +55,21 @@ router.post("/", async (req, res) => {
 // PUT mettre à jour une phase
 router.put("/:id", async (req, res) => {
   try {
-    const { nom, description, dateDebut, dateFin, statut, objectifs } = req.body;
+    const { dateDebut, dateFin, statut, dateCommunicationPlanningClient } = req.body;
 
-    const phase = await prisma.roadmapPhase.update({
+    const phase = await prisma.cadreTemporel.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(nom && { nom }),
-        ...(description !== undefined && { description }),
         ...(dateDebut !== undefined && { 
-          dateDebut: dateDebut ? new Date(dateDebut) : null 
+          dateDebutProjet: new Date(dateDebut)
         }),
         ...(dateFin !== undefined && { 
-          dateFin: dateFin ? new Date(dateFin) : null 
+          dateFinPrevisionnelle: new Date(dateFin)
         }),
-        ...(statut !== undefined && { statut }),
-        ...(objectifs !== undefined && { objectifs }),
+        ...(statut !== undefined && { statutValidationDate: statut }),
+        ...(dateCommunicationPlanningClient !== undefined && { 
+          dateCommunicationPlanningClient: new Date(dateCommunicationPlanningClient)
+        }),
         dateModification: new Date(),
       },
     });
@@ -86,7 +83,7 @@ router.put("/:id", async (req, res) => {
 // DELETE supprimer une phase
 router.delete("/:id", async (req, res) => {
   try {
-    await prisma.roadmapPhase.delete({
+    await prisma.cadreTemporel.delete({
       where: { id: parseInt(req.params.id) },
     });
     res.json({ message: "Phase supprimée avec succès" });

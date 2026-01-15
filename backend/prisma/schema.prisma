@@ -1,6 +1,3 @@
-// Schéma Prisma basé sur les formulaires frontend de l'application Julee
-// Ce schéma correspond exactement aux champs affichés dans les formulaires
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,10 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// GESTION DES UTILISATEURS ET PROFILS
-// ============================================
-
 model User {
   id               Int      @id @default(autoincrement())
   prenom           String
@@ -22,32 +15,24 @@ model User {
   motDePasse       String
   profilId         Int
   description      String?
+  societeId        Int?
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
-  profil           Profil   @relation(fields: [profilId], references: [id])
-  demandes         Demande[]
-  
+
+  @@index([profilId], map: "users_profilId_fkey")
+  @@index([societeId], map: "users_societeId_fkey")
   @@map("users")
 }
 
-// Formulaire Profil : uniquement "nom" (pas de description dans le frontend)
 model Profil {
   id               Int      @id @default(autoincrement())
   nom              String   @unique
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
-  utilisateurs     User[]
-  
+
   @@map("profils")
 }
 
-// ============================================
-// GESTION DES SOCIÉTÉS
-// ============================================
-
-// Formulaire Société : nom, adresse, email, telephone, responsable
 model Societe {
   id               Int      @id @default(autoincrement())
   nom              String   @unique
@@ -57,56 +42,22 @@ model Societe {
   responsable      String?
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
-  demandes         Demande[]
-  unitesOrganisationnelles UniteOrganisationnelle[]
-  
+
   @@map("societes")
 }
 
-// ============================================
-// GESTION DES UNITÉS ORGANISATIONNELLES
-// ============================================
-
-// Formulaire UO : nom, type, actif, societeId
-model UniteOrganisationnelle {
-  id               Int      @id @default(autoincrement())
-  nom              String   @unique
-  type             String?
-  actif            Boolean  @default(true)
-  societeId        Int?
-  dateCreation     DateTime @default(now())
-  dateModification DateTime @updatedAt
-  
-  societe          Societe? @relation(fields: [societeId], references: [id])
-  demandes         Demande[]
-  
-  @@map("unites_organisationnelles")
-}
-
-// ============================================
-// GESTION DES STATUTS
-// ============================================
-
-// Formulaire Statut : nom, description, actif
 model Statut {
   id               Int      @id @default(autoincrement())
   nom              String   @unique
   description      String?
+  quiPeutAppliquer String?
   actif            Boolean  @default(true)
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
-  demandes         Demande[]
-  
+
   @@map("statuts")
 }
 
-// ============================================
-// GESTION DES COLLABORATEURS
-// ============================================
-
-// Formulaire Collaborateur : nom, email, poste, telephone, actif
 model Collaborateur {
   id               Int      @id @default(autoincrement())
   nom              String
@@ -116,94 +67,86 @@ model Collaborateur {
   actif            Boolean  @default(true)
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
+
   @@map("collaborateurs")
 }
 
-// ============================================
-// GESTION DES DEMANDES
-// ============================================
-
 model Demande {
-  id                         Int      @id @default(autoincrement())
-  titre                      String
-  description                String?  @db.Text
-  typeProjet                 String?
-  dateCreation               DateTime @default(now())
-  dateModification           DateTime @updatedAt
-  utilisateurId              Int
-  societeId                  Int
-  uniteOrganisationnelleId   Int
-  statutId                   Int
-  priorite                   String?
-  dateEcheance               DateTime?
-  
-  utilisateur                User                    @relation(fields: [utilisateurId], references: [id])
-  societe                    Societe                 @relation(fields: [societeId], references: [id])
-  uniteOrganisationnelle     UniteOrganisationnelle  @relation(fields: [uniteOrganisationnelleId], references: [id])
-  statut                     Statut                  @relation(fields: [statutId], references: [id])
-  
+  id                          Int       @id @default(autoincrement())
+  nomProjet                   String?
+  description                 String?   @db.Text
+  descriptionPerimetre        String?   @db.Text
+  perimetre                   String?   @db.Text
+  typeProjet                  String?
+  dateReception               DateTime
+  dateValidationSI            DateTime?
+  dateValidationPlanningDEV   DateTime?
+  dateValidationPlanningTIV   DateTime?
+  dateReponseDEV              DateTime?
+  dateReponseTIV              DateTime?
+  dateValidationPlanChargeDEV DateTime?
+  dateValidationPlanChargeTIV DateTime?
+  statutSoumission            String?
+  statutId                    Int?
+  isDraft                     Boolean   @default(false)
+  dateCreation                DateTime  @default(now())
+  dateModification            DateTime  @updatedAt
+
+  @@index([statutId], map: "demandes_statutId_fkey")
   @@map("demandes")
 }
 
-// ============================================
-// GESTION DES SPRINTS
-// ============================================
-
-// Formulaire Sprint : nom, description, dateDebut, dateFin, dateValidationSI, dateReponseDEV, dateReponseTIV
 model Sprint {
-  id                   Int      @id @default(autoincrement())
-  nom                  String
-  description          String?  @db.Text
-  dateDebut            DateTime
-  dateFin              DateTime
-  dateValidationSI     DateTime?
-  dateReponseDEV       DateTime?
-  dateReponseTIV       DateTime?
-  dateCreation         DateTime @default(now())
-  dateModification     DateTime @updatedAt
-  
+  id                 Int       @id @default(autoincrement())
+  nom                String
+  description        String?   @db.Text
+  dateDebut          DateTime
+  dateFin            DateTime
+  dateValidationSI   DateTime?
+  dateReponseDEV     DateTime?
+  dateReponseTIV     DateTime?
+  etape              String?
+  evenementImportant String?
+  pointsControle     Json?
+  ressources         Json?
+  respectPlanning    Boolean   @default(false)
+  dateCreation       DateTime  @default(now())
+  dateModification   DateTime  @updatedAt
+
   @@map("sprints")
 }
 
-// ============================================
-// GESTION DES RESSOURCES
-// ============================================
-
-// Formulaire Ressource : nom, type, disponibiliteHJ, tauxJournalier
 model Ressource {
   id               Int      @id @default(autoincrement())
   nom              String
   type             String
   disponibiliteHJ  Float
   tauxJournalier   Float
+  actif            Boolean  @default(true)
   dateCreation     DateTime @default(now())
   dateModification DateTime @updatedAt
-  
+
   @@map("ressources")
 }
 
-// ============================================
-// GESTION DES DÉLAIS
-// ============================================
-
-// Formulaire Délai : dateValidationSI, dateReponseDEV, dateReponseTIV
 model Delai {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   dateValidationSI DateTime?
   dateReponseDEV   DateTime?
   dateReponseTIV   DateTime?
-  dateCreation     DateTime @default(now())
-  dateModification DateTime @updatedAt
-  
+  delaiDEV         Float?
+  delaiTIV         Float?
+  respectDelaiDEV  Boolean   @default(false)
+  respectDelaiTIV  Boolean   @default(false)
+  rappelEnvoyeDEV  Boolean   @default(false)
+  rappelEnvoyeTIV  Boolean   @default(false)
+  notificationVue  Boolean   @default(false)
+  dateCreation     DateTime  @default(now())
+  dateModification DateTime  @updatedAt
+
   @@map("delais")
 }
 
-// ============================================
-// GESTION DES COÛTS
-// ============================================
-
-// Formulaire Coût : chargePrevisionnelleDEV, chargeEffectiveDEV, tjmDEV, chargePrevisionnelleTIV, chargeEffectiveTIV, tjmTIV
 model Cout {
   id                      Int      @id @default(autoincrement())
   chargePrevisionnelleDEV Float?
@@ -212,70 +155,91 @@ model Cout {
   chargePrevisionnelleTIV Float?
   chargeEffectiveTIV      Float?
   tjmTIV                  Float?
+  coutPrevuDEV            Float?
+  coutReelDEV             Float?
+  coutPrevuTIV            Float?
+  coutReelTIV             Float?
+  coutPrevuTotal          Float?
+  coutReelTotal           Float?
+  ecart                   Float?
   dateCreation            DateTime @default(now())
   dateModification        DateTime @updatedAt
-  
+
   @@map("couts")
 }
 
-// ============================================
-// GESTION DES RECETTES
-// ============================================
-
-// Formulaire Recette : dateDebut, dateFin, anomaliesBloquantes, anomaliesMajeures, anomaliesMineures, statutGlobal, commentairesGP
 model Recette {
-  id                   Int      @id @default(autoincrement())
-  dateDebut            DateTime
-  dateFin              DateTime?
-  anomaliesBloquantes  Int      @default(0)
-  anomaliesMajeures    Int      @default(0)
-  anomaliesMineures    Int      @default(0)
-  statutGlobal         String
-  commentairesGP       String?  @db.Text
-  dateCreation         DateTime @default(now())
-  dateModification     DateTime @updatedAt
-  
+  id                  Int       @id @default(autoincrement())
+  dateDebut           DateTime
+  dateFin             DateTime?
+  anomaliesBloquantes Int       @default(0)
+  anomaliesMajeures   Int       @default(0)
+  anomaliesMineures   Int       @default(0)
+  statutGlobal        String
+  commentairesGP      String?   @db.Text
+  dateCreation        DateTime  @default(now())
+  dateModification    DateTime  @updatedAt
+
   @@map("recettes")
 }
 
-// ============================================
-// GESTION DES UAT
-// ============================================
-
-// Formulaire UAT : dateDebutUAT, dateFinUAT, statutUAT, nombreRetoursUAT, reservesMetier, commentaireUAT, signatureValidationClient, planAction
 model UAT {
-  id                        Int      @id @default(autoincrement())
+  id                        Int       @id @default(autoincrement())
   dateDebutUAT              DateTime
-  dateFinUAT                DateTime
+  dateFinUAT                DateTime?
   statutUAT                 String
-  nombreRetoursUAT          Int      @default(0)
-  reservesMetier            String?  @db.Text
-  commentaireUAT            String?  @db.Text
+  nombreRetoursUAT          Int       @default(0)
+  reservesMetier            String?   @db.Text
+  commentaireUAT            String?   @db.Text
   signatureValidationClient String?
-  planAction                String?  @db.Text
-  dateCreation              DateTime @default(now())
-  dateModification          DateTime @updatedAt
-  
+  planAction                String?   @db.Text
+  dateCreation              DateTime  @default(now())
+  dateModification          DateTime  @updatedAt
+
   @@map("uat")
 }
 
-// ============================================
-// GESTION DES LIVRAISONS
-// ============================================
-
-// Formulaire Livraison : numeroVersion, releaseNotes, dateLivraisonPrevue, dateLivraisonEffective, dateDeploiement, responsableDevOps, statutLivraison, commentaireLivraison
 model Livraison {
-  id                      Int      @id @default(autoincrement())
-  numeroVersion           String
-  releaseNotes            String   @db.Text
-  dateLivraisonPrevue     DateTime
-  dateLivraisonEffective  DateTime?
-  dateDeploiement         DateTime?
-  responsableDevOps       String?
-  statutLivraison         String
-  commentaireLivraison    String?  @db.Text
-  dateCreation            DateTime @default(now())
-  dateModification        DateTime @updatedAt
-  
+  id                     Int       @id @default(autoincrement())
+  numeroVersion          String
+  releaseNotes           String    @db.Text
+  dateLivraisonPrevue    DateTime
+  dateLivraisonEffective DateTime?
+  dateDeploiement        DateTime?
+  responsableDevOps      String?
+  statutLivraison        String
+  commentairesGP         String?   @db.Text
+  validationGONOGO       String?
+  rollbackAutomatique    Boolean   @default(false)
+  dateCreation           DateTime  @default(now())
+  dateModification       DateTime  @updatedAt
+
   @@map("livraisons")
+}
+
+model UniteOrganisationnelle {
+  id               Int      @id @default(autoincrement())
+  nom              String
+  type             String?
+  adresse          String?
+  codePostal       String?
+  actif            Boolean  @default(true)
+  societeId        Int?
+  uoParenteId      Int?
+  dateCreation     DateTime @default(now())
+  dateModification DateTime @updatedAt
+
+  @@map("unites_organisationnelles")
+}
+
+model CadreTemporel {
+  id                              Int      @id @default(autoincrement())
+  dateDebutProjet                 DateTime
+  dateFinPrevisionnelle           DateTime
+  statutValidationDate            String?
+  dateCommunicationPlanningClient DateTime
+  dateCreation                    DateTime @default(now())
+  dateModification                DateTime @updatedAt
+
+  @@map("cadre_temporel")
 }

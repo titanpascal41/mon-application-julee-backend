@@ -1,18 +1,13 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET tous les demandes
 router.get("/", async (_req, res) => {
   try {
     const demandes = await prisma.demande.findMany({
-      include: {
-        societe: true,
-        interlocuteur: true,
-      },
-      orderBy: { dateEnregistrement: "desc" },
+      orderBy: { dateCreation: "desc" },
     });
     res.json(demandes);
   } catch (error) {
@@ -26,12 +21,6 @@ router.get("/:id", async (req, res) => {
   try {
     const demande = await prisma.demande.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: {
-        societe: true,
-        interlocuteur: true,
-        couts: true,
-        delais: true,
-      },
     });
     if (!demande) {
       return res.status(404).json({ error: "Demande introuvable" });
@@ -47,24 +36,28 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const {
-      dateReception,
-      societeId,
-      interlocuteurNom,
-      interlocuteurId,
+      nomProjet,
       description,
-      priorite,
-      statut,
+      descriptionPerimetre,
+      perimetre,
+      typeProjet,
+      dateReception,
+      statutSoumission,
+      statutId,
+      isDraft,
     } = req.body;
 
     const demande = await prisma.demande.create({
       data: {
-        dateReception: new Date(dateReception),
-        societeId: parseInt(societeId),
-        interlocuteurNom,
-        interlocuteurId: interlocuteurId ? parseInt(interlocuteurId) : null,
+        nomProjet,
         description,
-        priorite,
-        statut,
+        descriptionPerimetre,
+        perimetre,
+        typeProjet,
+        dateReception: new Date(dateReception),
+        statutSoumission,
+        statutId: statutId ? parseInt(statutId) : null,
+        isDraft: isDraft ?? false,
       },
     });
     res.status(201).json(demande);
@@ -78,27 +71,29 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const {
-      dateReception,
-      societeId,
-      interlocuteurNom,
-      interlocuteurId,
+      nomProjet,
       description,
-      priorite,
-      statut,
+      descriptionPerimetre,
+      perimetre,
+      typeProjet,
+      dateReception,
+      statutSoumission,
+      statutId,
+      isDraft,
     } = req.body;
 
     const demande = await prisma.demande.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(dateReception && { dateReception: new Date(dateReception) }),
-        ...(societeId && { societeId: parseInt(societeId) }),
-        ...(interlocuteurNom !== undefined && { interlocuteurNom }),
-        ...(interlocuteurId !== undefined && { 
-          interlocuteurId: interlocuteurId ? parseInt(interlocuteurId) : null 
-        }),
+        ...(nomProjet !== undefined && { nomProjet }),
         ...(description !== undefined && { description }),
-        ...(priorite !== undefined && { priorite }),
-        ...(statut !== undefined && { statut }),
+        ...(descriptionPerimetre !== undefined && { descriptionPerimetre }),
+        ...(perimetre !== undefined && { perimetre }),
+        ...(typeProjet !== undefined && { typeProjet }),
+        ...(dateReception !== undefined && { dateReception: new Date(dateReception) }),
+        ...(statutSoumission !== undefined && { statutSoumission }),
+        ...(statutId !== undefined && { statutId: statutId ? parseInt(statutId) : null }),
+        ...(isDraft !== undefined && { isDraft }),
         dateModification: new Date(),
       },
     });

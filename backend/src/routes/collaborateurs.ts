@@ -1,119 +1,108 @@
 import { Router } from "express";
-import { db } from "../db";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { prisma } from "../db";
 
 const router = Router();
 
 // GET tous les collaborateurs
-router.get("/", (_req, res) => {
-  db.query("SELECT * FROM collaborateurs ORDER BY id ASC", (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT collaborateurs:", err);
-      return res.status(500).json({ message: "Erreur lors de la récupération des collaborateurs", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    return res.json(rows);
-  });
+router.get("/", async (_req, res) => {
+  try {
+    const collaborateurs = await prisma.collaborateur.findMany({
+      orderBy: { id: "asc" }
+    });
+    return res.json(collaborateurs);
+  } catch (error) {
+    console.error("Erreur SELECT collaborateurs:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération des collaborateurs", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // GET un collaborateur par id
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("SELECT * FROM collaborateurs WHERE id = ?", [id], (err, results) => {
-    if (err) {
-      console.error("Erreur SELECT collaborateur:", err);
-      return res.status(500).json({ message: "Erreur lors de la récupération du collaborateur", error: err.message });
-    }
-    const rows = results as RowDataPacket[];
-    if (rows.length === 0) {
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const collaborateur = await prisma.collaborateur.findUnique({
+      where: { id: parseInt(id) }
+    });
+    if (!collaborateur) {
       return res.status(404).json({ message: "Collaborateur non trouvé" });
     }
-    return res.json(rows[0]);
-  });
+    return res.json(collaborateur);
+  } catch (error) {
+    console.error("Erreur SELECT collaborateur:", error);
+    return res.status(500).json({ message: "Erreur lors de la récupération du collaborateur", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // CREATE collaborateur
-router.post("/", (req, res) => {
-  const { nom, email, poste, telephone, actif } = req.body;
+router.post("/", async (req, res) => {
+  try {
+    const { nom, email, poste, telephone, actif } = req.body;
 
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du collaborateur est requis" });
-  }
-  if (!email || !email.trim()) {
-    return res.status(400).json({ message: "L'email du collaborateur est requis" });
-  }
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du collaborateur est requis" });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "L'email du collaborateur est requis" });
+    }
 
-  db.query(
-    "INSERT INTO collaborateurs (nom, email, poste, telephone, actif) VALUES (?, ?, ?, ?, ?)",
-    [nom.trim(), email.trim(), poste || null, telephone || null, actif ?? true],
-    (err, result) => {
-      if (err) {
-        console.error("Erreur INSERT collaborateur:", err);
-        return res.status(500).json({ message: "Erreur lors de la création du collaborateur", error: err.message });
-      }
-      const info = result as ResultSetHeader;
-      return res.status(201).json({
-        id: info.insertId,
+    const collaborateur = await prisma.collaborateur.create({
+      data: {
         nom: nom.trim(),
         email: email.trim(),
-        poste,
-        telephone,
+        poste: poste || null,
+        telephone: telephone || null,
         actif: actif ?? true
-      });
-    }
-  );
+      }
+    });
+    return res.status(201).json(collaborateur);
+  } catch (error) {
+    console.error("Erreur INSERT collaborateur:", error);
+    return res.status(500).json({ message: "Erreur lors de la création du collaborateur", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // UPDATE collaborateur
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const { nom, email, poste, telephone, actif } = req.body;
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, email, poste, telephone, actif } = req.body;
 
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ message: "Le nom du collaborateur est requis" });
-  }
-  if (!email || !email.trim()) {
-    return res.status(400).json({ message: "L'email du collaborateur est requis" });
-  }
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ message: "Le nom du collaborateur est requis" });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "L'email du collaborateur est requis" });
+    }
 
-  db.query(
-    "UPDATE collaborateurs SET nom = ?, email = ?, poste = ?, telephone = ?, actif = ? WHERE id = ?",
-    [nom.trim(), email.trim(), poste || null, telephone || null, actif ?? true, id],
-    (err, result) => {
-      if (err) {
-        console.error("Erreur UPDATE collaborateur:", err);
-        return res.status(500).json({ message: "Erreur lors de la mise à jour du collaborateur", error: err.message });
-      }
-      const info = result as ResultSetHeader;
-      if (info.affectedRows === 0) {
-        return res.status(404).json({ message: "Collaborateur non trouvé" });
-      }
-      return res.json({
-        id,
+    const collaborateur = await prisma.collaborateur.update({
+      where: { id: parseInt(id) },
+      data: {
         nom: nom.trim(),
         email: email.trim(),
-        poste,
-        telephone,
+        poste: poste || null,
+        telephone: telephone || null,
         actif: actif ?? true
-      });
-    }
-  );
+      }
+    });
+    return res.json(collaborateur);
+  } catch (error) {
+    console.error("Erreur UPDATE collaborateur:", error);
+    return res.status(500).json({ message: "Erreur lors de la mise à jour du collaborateur", error: error instanceof Error ? error.message : error });
+  }
 });
 
 // DELETE collaborateur
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-  db.query("DELETE FROM collaborateurs WHERE id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("Erreur DELETE collaborateur:", err);
-      return res.status(500).json({ message: "Erreur lors de la suppression du collaborateur", error: err.message });
-    }
-    const info = result as ResultSetHeader;
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ message: "Collaborateur non trouvé" });
-    }
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.collaborateur.delete({
+      where: { id: parseInt(id) }
+    });
     return res.json({ message: "Collaborateur supprimé" });
-  });
+  } catch (error) {
+    console.error("Erreur DELETE collaborateur:", error);
+    return res.status(500).json({ message: "Erreur lors de la suppression du collaborateur", error: error instanceof Error ? error.message : error });
+  }
 });
 
 export default router;

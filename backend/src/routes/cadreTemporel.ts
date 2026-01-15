@@ -1,14 +1,13 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { prisma } from "../db";
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = Router();
 
 // GET tous les cadres temporels
 router.get("/", async (_req, res) => {
   try {
     const cadres = await prisma.cadreTemporel.findMany({
-      orderBy: { dateDebut: "asc" },
+      orderBy: { dateDebutProjet: "asc" },
     });
     res.json(cadres);
   } catch (error) {
@@ -36,15 +35,14 @@ router.get("/:id", async (req, res) => {
 // POST créer un cadre temporel
 router.post("/", async (req, res) => {
   try {
-    const { nom, description, type, dateDebut, dateFin } = req.body;
+    const { dateDebutProjet, dateFinPrevisionnelle, statutValidationDate, dateCommunicationPlanningClient } = req.body;
 
     const cadre = await prisma.cadreTemporel.create({
       data: {
-        nom,
-        description,
-        type,
-        dateDebut: dateDebut ? new Date(dateDebut) : null,
-        dateFin: dateFin ? new Date(dateFin) : null,
+        dateDebutProjet: new Date(dateDebutProjet),
+        dateFinPrevisionnelle: new Date(dateFinPrevisionnelle),
+        statutValidationDate,
+        dateCommunicationPlanningClient: new Date(dateCommunicationPlanningClient),
       },
     });
     res.status(201).json(cadre);
@@ -57,19 +55,20 @@ router.post("/", async (req, res) => {
 // PUT mettre à jour un cadre temporel
 router.put("/:id", async (req, res) => {
   try {
-    const { nom, description, type, dateDebut, dateFin } = req.body;
+    const { dateDebutProjet, dateFinPrevisionnelle, statutValidationDate, dateCommunicationPlanningClient } = req.body;
 
     const cadre = await prisma.cadreTemporel.update({
       where: { id: parseInt(req.params.id) },
       data: {
-        ...(nom && { nom }),
-        ...(description !== undefined && { description }),
-        ...(type !== undefined && { type }),
-        ...(dateDebut !== undefined && { 
-          dateDebut: dateDebut ? new Date(dateDebut) : null 
+        ...(dateDebutProjet !== undefined && { 
+          dateDebutProjet: new Date(dateDebutProjet)
         }),
-        ...(dateFin !== undefined && { 
-          dateFin: dateFin ? new Date(dateFin) : null 
+        ...(dateFinPrevisionnelle !== undefined && { 
+          dateFinPrevisionnelle: new Date(dateFinPrevisionnelle)
+        }),
+        ...(statutValidationDate !== undefined && { statutValidationDate }),
+        ...(dateCommunicationPlanningClient !== undefined && { 
+          dateCommunicationPlanningClient: new Date(dateCommunicationPlanningClient)
         }),
         dateModification: new Date(),
       },
